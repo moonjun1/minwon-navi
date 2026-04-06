@@ -10,6 +10,7 @@ import {
   type OfficeWithWaiting,
   type BusStop,
 } from "@/lib/api-clients";
+import { haversine } from "@/lib/haversine";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -28,7 +29,9 @@ function generateRuleBasedResponse(
   userMessage: string,
   services: CivilService[],
   offices: OfficeWithWaiting[],
-  busStops: BusStop[]
+  busStops: BusStop[],
+  userLat?: number,
+  userLng?: number
 ): string {
   const parts: string[] = [];
 
@@ -47,15 +50,39 @@ function generateRuleBasedResponse(
     }
 
     if (offices.length > 0) {
-      const sorted = [...offices].sort(
-        (a, b) => a.totalWaiting - b.totalWaiting
-      );
-      const recommended = sorted[0];
-
-      parts.push("\n🏛️ **실시간 민원실 현황**");
-      parts.push(
-        `추천: **${recommended.csoNm}** (현재 대기 ${recommended.totalWaiting}명으로 가장 한산합니다)\n`
-      );
+      let recommended: OfficeWithWaiting;
+      if (userLat != null && userLng != null) {
+        // 거리 기반 추천
+        const withDist = offices.map((o) => {
+          const oLat = parseFloat(o.lat);
+          const oLng = parseFloat(o.lot);
+          const dist =
+            isNaN(oLat) || isNaN(oLng)
+              ? Infinity
+              : haversine(userLat, userLng, oLat, oLng);
+          return { ...o, dist };
+        });
+        withDist.sort((a, b) => a.dist - b.dist);
+        recommended = withDist[0];
+        const distKm = withDist[0].dist;
+        const distStr =
+          distKm < 1
+            ? `약 ${Math.round(distKm * 1000)}m`
+            : `약 ${distKm.toFixed(1)}km`;
+        parts.push("\n🏛️ **가까운 민원실 추천**");
+        parts.push(
+          `추천: **${recommended.csoNm}** (${distStr}, 현재 대기 ${recommended.totalWaiting}명)\n`
+        );
+      } else {
+        const sorted = [...offices].sort(
+          (a, b) => a.totalWaiting - b.totalWaiting
+        );
+        recommended = sorted[0];
+        parts.push("\n🏛️ **실시간 민원실 현황**");
+        parts.push(
+          `추천: **${recommended.csoNm}** (현재 대기 ${recommended.totalWaiting}명으로 가장 한산합니다)\n`
+        );
+      }
     }
 
     if (busStops.length > 0) {
@@ -213,7 +240,11 @@ ${offices
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages } = body as { messages: ChatMessage[] };
+    const { messages, lat, lng } = body as {
+      messages: ChatMessage[];
+      lat?: number;
+      lng?: number;
+    };
 
     if (!messages || messages.length === 0) {
       return NextResponse.json(
@@ -251,7 +282,9 @@ export async function POST(request: NextRequest) {
         userMessage,
         services,
         offices,
-        busStops
+        busStops,
+        lat,
+        lng
       );
     }
 
@@ -260,9 +293,25 @@ export async function POST(request: NextRequest) {
     };
 
     if (offices.length > 0) {
-      response.offices = offices.sort(
-        (a, b) => a.totalWaiting - b.totalWaiting
-      );
+      if (lat != null && lng != null) {
+        // 거리 기반 정렬
+        response.offices = offices
+          .map((o) => {
+            const oLat = parseFloat(o.lat);
+            const oLng = parseFloat(o.lot);
+            const dist =
+              isNaN(oLat) || isNaN(oLng)
+                ? Infinity
+                : haversine(lat, lng, oLat, oLng);
+            return { ...o, distance: dist };
+          })
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 10);
+      } else {
+        response.offices = offices
+          .sort((a, b) => a.totalWaiting - b.totalWaiting)
+          .slice(0, 10);
+      }
     }
 
     if (busStops.length > 0) {
