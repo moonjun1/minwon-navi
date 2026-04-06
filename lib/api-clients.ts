@@ -4,19 +4,22 @@ const BUS_BASE = "https://apis.data.go.kr/B551982/rte";
 
 export interface CivilOffice {
   csoNm: string; // 민원실명
-  rdnmAdr: string; // 도로명주소
+  roadNmAddr: string; // 도로명주소
+  lotnoAddr: string; // 지번주소
   lat: string; // 위도
   lot: string; // 경도
-  opnBgngTm: string; // 운영시작시간
-  opnEndTm: string; // 운영종료시간
-  nghtOpnYn: string; // 야간운영여부
+  wkdyOperBgngTm: string; // 평일 운영시작시간
+  wkdyOperEndTm: string; // 평일 운영종료시간
+  nghtOperYn: string; // 야간운영여부
+  nghtDowExpln: string; // 야간운영 설명
+  wkndOperYn: string; // 주말운영여부
   stdgCd: string; // 지자체코드
 }
 
 export interface CivilOfficeWaiting {
   csoNm: string; // 민원실명
   taskNm: string; // 업무명
-  wtngCnt: number; // 대기인수
+  wtngCnt: number | string; // 대기인수
 }
 
 export interface BusStop {

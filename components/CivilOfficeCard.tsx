@@ -21,6 +21,7 @@ export default function CivilOfficeCard({
 }: CivilOfficeCardProps) {
   const formatTime = (t: string) => {
     if (!t || t.length < 4) return t || "-";
+    // Handle both "0900" (4-digit) and "090000" (6-digit) formats
     return `${t.slice(0, 2)}:${t.slice(2, 4)}`;
   };
 
@@ -43,15 +44,15 @@ export default function CivilOfficeCard({
                   추천
                 </Badge>
               )}
-              {office.nghtOpnYn === "Y" && (
+              {office.nghtOperYn === "Y" && (
                 <Badge variant="secondary" className="shrink-0 bg-purple-100 text-purple-700">
                   야간운영
                 </Badge>
               )}
             </div>
-            {office.rdnmAdr && (
+            {office.roadNmAddr && (
               <p className="mt-1 text-sm text-muted-foreground truncate">
-                {office.rdnmAdr}
+                {office.roadNmAddr}
               </p>
             )}
           </div>
@@ -70,7 +71,7 @@ export default function CivilOfficeCard({
       <CardContent>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span>
-            🕐 {formatTime(office.opnBgngTm)} ~ {formatTime(office.opnEndTm)}
+            🕐 {formatTime(office.wkdyOperBgngTm)} ~ {formatTime(office.wkdyOperEndTm)}
           </span>
         </div>
 

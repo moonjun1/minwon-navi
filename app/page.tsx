@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import type { OfficeWithWaiting, BusStop } from "@/lib/api-clients";
@@ -32,15 +31,25 @@ const WELCOME_MESSAGE: Message = {
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = scrollAreaRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    // Use requestAnimationFrame to ensure DOM has updated before scrolling
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+  }, [messages, isLoading, scrollToBottom]);
 
   const handleSend = async (content: string) => {
     const userMessage: Message = {
@@ -112,7 +121,7 @@ export default function Home() {
       </header>
 
       {/* Messages */}
-      <ScrollArea className="flex-1">
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
         <main className="px-4 py-4">
           <div className="mx-auto max-w-3xl">
             {messages.map((msg) => (
@@ -156,7 +165,7 @@ export default function Home() {
             <div ref={messagesEndRef} />
           </div>
         </main>
-      </ScrollArea>
+      </div>
 
       {/* Input */}
       <ChatInput onSend={handleSend} disabled={isLoading} />

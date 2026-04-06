@@ -137,7 +137,7 @@ ${
 ${offices
   .map(
     (o) =>
-      `- ${o.csoNm}: 대기 ${o.totalWaiting}명 (${o.rdnmAdr || "주소 미상"})`
+      `- ${o.csoNm}: 대기 ${o.totalWaiting}명 (${o.roadNmAddr || "주소 미상"})`
   )
   .join("\n")}`
     : ""
