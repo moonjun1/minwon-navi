@@ -3,6 +3,7 @@
 import type { OfficeWithWaiting } from "@/lib/api-clients";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface CivilOfficeCardProps {
   office: OfficeWithWaiting;
@@ -85,6 +86,34 @@ export default function CivilOfficeCard({
                 </span>
               </Badge>
             ))}
+          </div>
+        )}
+
+        {/* 길찾기 버튼 */}
+        {office.lat && office.lot && (
+          <div className="mt-3 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs h-8"
+              onClick={() => {
+                const url = `https://map.naver.com/v5/directions/-/${office.lot},${office.lat},${encodeURIComponent(office.csoNm)}/-/transit`;
+                window.open(url, "_blank", "noopener,noreferrer");
+              }}
+            >
+              🗺️ 네이버 길찾기
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs h-8"
+              onClick={() => {
+                const url = `https://map.kakao.com/link/to/${encodeURIComponent(office.csoNm)},${office.lat},${office.lot}`;
+                window.open(url, "_blank", "noopener,noreferrer");
+              }}
+            >
+              🚕 카카오 길찾기
+            </Button>
           </div>
         )}
       </CardContent>

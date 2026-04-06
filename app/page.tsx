@@ -9,6 +9,7 @@ import DashboardTab from "@/components/DashboardTab";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import type { OfficeWithWaiting, BusStop } from "@/lib/api-clients";
 
 // Dynamic import for Leaflet (SSR incompatible)
@@ -32,15 +33,26 @@ interface Message {
 const WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
-  content:
-    "안녕하세요! **민원 내비**입니다. 🏛️\n\n" +
-    "민원에 대해 궁금한 점을 물어보세요!\n\n" +
-    "예를 들어:\n" +
-    '- "전입신고 하려는데 뭐가 필요해?"\n' +
-    '- "여권 재발급 서류 알려줘"\n' +
-    '- "주민등록등본 발급하려면?"\n\n' +
-    "필요 서류 안내부터 실시간 민원실 대기현황까지 한번에 알려드립니다!",
+  content: "안녕하세요! **민원 내비**입니다 🏛️\n\n무엇을 도와드릴까요?",
 };
+
+const WELCOME_CARDS = [
+  {
+    icon: "💬",
+    title: "민원 안내",
+    description: "필요 서류와 절차를 알려드려요",
+  },
+  {
+    icon: "🏛️",
+    title: "민원실 추천",
+    description: "가장 한산한 곳을 찾아드려요",
+  },
+  {
+    icon: "📍",
+    title: "실시간 현황",
+    description: "전국 민원실 대기 현황을 확인하세요",
+  },
+];
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
@@ -71,6 +83,12 @@ export default function Home() {
   }, []);
 
   const isEmptyChat = messages.length <= 1; // Only welcome message
+
+  const handleNewChat = () => {
+    setMessages([WELCOME_MESSAGE]);
+    setIsLoading(false);
+    setActiveTab("chat");
+  };
 
   const scrollToBottom = useCallback(() => {
     const container = scrollAreaRef.current;
@@ -153,18 +171,30 @@ export default function Home() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <header className="shrink-0 border-b border-border bg-background px-4 py-3">
-        <div className="mx-auto max-w-3xl flex items-center gap-3">
-          <Avatar size="lg">
-            <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-              🏛️
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-lg font-bold text-foreground">민원 내비</h1>
-            <p className="text-xs text-muted-foreground">
-              AI 민원 안내 서비스
-            </p>
+        <div className="mx-auto max-w-3xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Avatar size="lg">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                🏛️
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-lg font-bold text-foreground">민원 내비</h1>
+              <p className="text-xs text-muted-foreground">
+                AI 민원 안내 서비스
+              </p>
+            </div>
           </div>
+          {!isEmptyChat && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              onClick={handleNewChat}
+            >
+              ✨ 새 대화
+            </Button>
+          )}
         </div>
       </header>
 
@@ -258,7 +288,29 @@ export default function Home() {
             </main>
           </div>
 
-          {/* Suggested Questions (shown only when chat is empty) */}
+          {/* Welcome cards + Suggested Questions (shown only when chat is empty) */}
+          {isEmptyChat && !isLoading && (
+            <div className="px-4 pb-2">
+              <div className="mx-auto max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {WELCOME_CARDS.map((card) => (
+                  <Card
+                    key={card.title}
+                    className="border border-border/50 bg-muted/30 py-0"
+                  >
+                    <CardContent className="px-4 py-3 text-center">
+                      <div className="text-2xl mb-1">{card.icon}</div>
+                      <div className="text-sm font-semibold text-foreground">
+                        {card.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {card.description}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
           {isEmptyChat && !isLoading && (
             <SuggestedQuestions onSelect={handleSend} />
           )}

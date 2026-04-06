@@ -5,6 +5,7 @@ import type { BusStop } from "@/lib/api-clients";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import CivilOfficeCard from "./CivilOfficeCard";
+import ReactMarkdown from "react-markdown";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
@@ -13,41 +14,51 @@ interface ChatMessageProps {
   busStops?: BusStop[];
 }
 
-function renderMarkdown(text: string) {
-  // Simple markdown: **bold**, newlines, - list items
-  const lines = text.split("\n");
-  return lines.map((line, i) => {
-    // Bold
-    const parts = line.split(/(\*\*[^*]+\*\*)/g);
-    const rendered = parts.map((part, j) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return (
-          <strong key={j} className="font-semibold">
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-      return <span key={j}>{part}</span>;
-    });
-
-    if (line.trim().startsWith("- ")) {
-      return (
-        <li key={i} className="ml-4 list-disc">
-          {rendered}
-        </li>
-      );
-    }
-
-    if (line.trim() === "") {
-      return <br key={i} />;
-    }
-
-    return (
-      <p key={i} className="leading-relaxed">
-        {rendered}
-      </p>
-    );
-  });
+function MarkdownContent({ text }: { text: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        h3: ({ children }) => (
+          <h3 className="text-base font-bold mt-3 mb-1">{children}</h3>
+        ),
+        h4: ({ children }) => (
+          <h4 className="text-sm font-bold mt-2 mb-1">{children}</h4>
+        ),
+        strong: ({ children }) => (
+          <strong className="font-semibold">{children}</strong>
+        ),
+        ul: ({ children }) => (
+          <ul className="ml-4 list-disc space-y-0.5">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="ml-4 list-decimal space-y-0.5">{children}</ol>
+        ),
+        li: ({ children }) => (
+          <li className="leading-relaxed">{children}</li>
+        ),
+        p: ({ children }) => (
+          <p className="leading-relaxed">{children}</p>
+        ),
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline hover:text-blue-800"
+          >
+            {children}
+          </a>
+        ),
+        code: ({ children }) => (
+          <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">
+            {children}
+          </code>
+        ),
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  );
 }
 
 export default function ChatMessage({
@@ -90,13 +101,13 @@ export default function ChatMessage({
         {/* Message bubble */}
         {isUser ? (
           <div className="rounded-2xl rounded-tr-md bg-primary text-primary-foreground px-4 py-3">
-            <div className="text-sm space-y-1">{renderMarkdown(content)}</div>
+            <div className="text-sm space-y-1"><MarkdownContent text={content} /></div>
           </div>
         ) : (
           <Card className="rounded-2xl rounded-tl-md border-none bg-muted/50 py-0">
             <CardContent className="px-4 py-3">
               <div className="text-sm space-y-1 text-foreground">
-                {renderMarkdown(content)}
+                <MarkdownContent text={content} />
               </div>
             </CardContent>
           </Card>

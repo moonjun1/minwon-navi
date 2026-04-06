@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { OfficeWithWaiting } from "@/lib/api-clients";
 import { haversine } from "@/lib/haversine";
 
@@ -205,12 +206,28 @@ export default function DashboardTab() {
                   : "대기인수 적은 순으로 정렬됩니다"}
             </p>
           </div>
-          {lastUpdated && (
-            <Badge variant="secondary" className="text-xs shrink-0">
-              {lastUpdated} 갱신
-            </Badge>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {lastUpdated && (
+              <span className="text-xs text-muted-foreground">
+                최근 갱신: {lastUpdated}
+              </span>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => {
+                setLoading(true);
+                fetchOffices();
+              }}
+            >
+              🔄 새로고침
+            </Button>
+          </div>
         </div>
+        <p className="text-xs text-muted-foreground mb-3 -mt-2">
+          ⏱️ 30초마다 자동 갱신됩니다
+        </p>
 
         {/* 위치 거부 시 지역 선택 */}
         {(location.type === "denied" || location.type === "region") && (
@@ -310,6 +327,33 @@ export default function DashboardTab() {
                         </span>
                       </Badge>
                     ))}
+                  </div>
+                )}
+                {/* 길찾기 버튼 */}
+                {office.lat && office.lot && (
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs h-7"
+                      onClick={() => {
+                        const url = `https://map.naver.com/v5/directions/-/${office.lot},${office.lat},${encodeURIComponent(office.csoNm)}/-/transit`;
+                        window.open(url, "_blank", "noopener,noreferrer");
+                      }}
+                    >
+                      🗺️ 네이버
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs h-7"
+                      onClick={() => {
+                        const url = `https://map.kakao.com/link/to/${encodeURIComponent(office.csoNm)},${office.lat},${office.lot}`;
+                        window.open(url, "_blank", "noopener,noreferrer");
+                      }}
+                    >
+                      🚕 카카오
+                    </Button>
                   </div>
                 )}
               </CardContent>
