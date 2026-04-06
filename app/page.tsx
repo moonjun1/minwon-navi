@@ -1,65 +1,154 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useRef, useEffect, useCallback } from "react";
+import ChatMessage from "@/components/ChatMessage";
+import ChatInput from "@/components/ChatInput";
+import type { OfficeWithWaiting, BusStop } from "@/lib/api-clients";
+
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  offices?: OfficeWithWaiting[];
+  busStops?: BusStop[];
+}
+
+const WELCOME_MESSAGE: Message = {
+  id: "welcome",
+  role: "assistant",
+  content:
+    "안녕하세요! **민원 내비**입니다. 🏛️\n\n" +
+    "민원에 대해 궁금한 점을 물어보세요!\n\n" +
+    "예를 들어:\n" +
+    '- "전입신고 하려는데 뭐가 필요해?"\n' +
+    '- "여권 재발급 서류 알려줘"\n' +
+    '- "주민등록등본 발급하려면?"\n\n' +
+    "필요 서류 안내부터 실시간 민원실 대기현황까지 한번에 알려드립니다!",
+};
 
 export default function Home() {
+  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  const handleSend = async (content: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const chatHistory = messages
+        .filter((m) => m.id !== "welcome")
+        .map((m) => ({ role: m.role, content: m.content }));
+      chatHistory.push({ role: "user", content });
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: chatHistory }),
+      });
+
+      if (!res.ok) {
+        throw new Error("API request failed");
+      }
+
+      const data = await res.json();
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.message,
+        offices: data.offices,
+        busStops: data.busStops,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content:
+          "죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해주세요.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <header className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
+        <div className="mx-auto max-w-3xl flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 text-white text-xl">
+            🏛️
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">민원 내비</h1>
+            <p className="text-xs text-gray-500">
+              AI 민원 안내 서비스
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </header>
+
+      {/* Messages */}
+      <main className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="mx-auto max-w-3xl">
+          {messages.map((msg) => (
+            <ChatMessage
+              key={msg.id}
+              role={msg.role}
+              content={msg.content}
+              offices={msg.offices}
+              busStops={msg.busStops}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
+          {isLoading && (
+            <div className="flex justify-start mb-4">
+              <div className="max-w-[75%]">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm bg-gray-200 text-gray-600">
+                    🏛️
+                  </div>
+                  <span className="text-xs text-gray-400">민원 내비</span>
+                </div>
+                <div className="rounded-2xl rounded-tl-md bg-gray-100 px-4 py-3">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" />
+                    <div
+                      className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    />
+                    <div
+                      className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
       </main>
+
+      {/* Input */}
+      <ChatInput onSend={handleSend} disabled={isLoading} />
     </div>
   );
 }
