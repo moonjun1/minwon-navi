@@ -2,6 +2,8 @@
 
 import type { OfficeWithWaiting } from "@/lib/api-clients";
 import type { BusStop } from "@/lib/api-clients";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 import CivilOfficeCard from "./CivilOfficeCard";
 
 interface ChatMessageProps {
@@ -69,35 +71,41 @@ export default function ChatMessage({
             isUser ? "flex-row-reverse" : ""
           }`}
         >
-          <div
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-sm ${
-              isUser
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-600"
-            }`}
-          >
-            {isUser ? "👤" : "🏛️"}
-          </div>
-          <span className="text-xs text-gray-400">
+          <Avatar size="sm">
+            <AvatarFallback
+              className={
+                isUser
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }
+            >
+              {isUser ? "👤" : "🏛️"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs text-muted-foreground">
             {isUser ? "나" : "민원 내비"}
           </span>
         </div>
 
         {/* Message bubble */}
-        <div
-          className={`rounded-2xl px-4 py-3 ${
-            isUser
-              ? "bg-blue-500 text-white rounded-tr-md"
-              : "bg-gray-100 text-gray-800 rounded-tl-md"
-          }`}
-        >
-          <div className="text-sm space-y-1">{renderMarkdown(content)}</div>
-        </div>
+        {isUser ? (
+          <div className="rounded-2xl rounded-tr-md bg-primary text-primary-foreground px-4 py-3">
+            <div className="text-sm space-y-1">{renderMarkdown(content)}</div>
+          </div>
+        ) : (
+          <Card className="rounded-2xl rounded-tl-md border-none bg-muted/50 py-0">
+            <CardContent className="px-4 py-3">
+              <div className="text-sm space-y-1 text-foreground">
+                {renderMarkdown(content)}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Civil office cards */}
         {!isUser && offices && offices.length > 0 && (
           <div className="mt-3 space-y-2">
-            <p className="text-xs font-medium text-gray-500 px-1">
+            <p className="text-xs font-medium text-muted-foreground px-1">
               🏛️ 민원실 실시간 현황
             </p>
             {offices.slice(0, 5).map((office, i) => (
@@ -113,7 +121,7 @@ export default function ChatMessage({
         {/* Bus stops */}
         {!isUser && busStops && busStops.length > 0 && (
           <div className="mt-3">
-            <p className="text-xs font-medium text-gray-500 px-1 mb-2">
+            <p className="text-xs font-medium text-muted-foreground px-1 mb-2">
               🚌 근처 버스 정류소
             </p>
             <div className="space-y-1">

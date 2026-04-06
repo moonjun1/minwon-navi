@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 import type { OfficeWithWaiting, BusStop } from "@/lib/api-clients";
 
 interface Message {
@@ -92,14 +95,16 @@ export default function Home() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
+      <header className="shrink-0 border-b border-border bg-background px-4 py-3">
         <div className="mx-auto max-w-3xl flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 text-white text-xl">
-            🏛️
-          </div>
+          <Avatar size="lg">
+            <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+              🏛️
+            </AvatarFallback>
+          </Avatar>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">민원 내비</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-lg font-bold text-foreground">민원 내비</h1>
+            <p className="text-xs text-muted-foreground">
               AI 민원 안내 서비스
             </p>
           </div>
@@ -107,45 +112,51 @@ export default function Home() {
       </header>
 
       {/* Messages */}
-      <main className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="mx-auto max-w-3xl">
-          {messages.map((msg) => (
-            <ChatMessage
-              key={msg.id}
-              role={msg.role}
-              content={msg.content}
-              offices={msg.offices}
-              busStops={msg.busStops}
-            />
-          ))}
-          {isLoading && (
-            <div className="flex justify-start mb-4">
-              <div className="max-w-[75%]">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm bg-gray-200 text-gray-600">
-                    🏛️
+      <ScrollArea className="flex-1">
+        <main className="px-4 py-4">
+          <div className="mx-auto max-w-3xl">
+            {messages.map((msg) => (
+              <ChatMessage
+                key={msg.id}
+                role={msg.role}
+                content={msg.content}
+                offices={msg.offices}
+                busStops={msg.busStops}
+              />
+            ))}
+            {isLoading && (
+              <div className="flex justify-start mb-4">
+                <div className="max-w-[75%]">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Avatar size="sm">
+                      <AvatarFallback className="bg-muted text-muted-foreground">
+                        🏛️
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs text-muted-foreground">민원 내비</span>
                   </div>
-                  <span className="text-xs text-gray-400">민원 내비</span>
-                </div>
-                <div className="rounded-2xl rounded-tl-md bg-gray-100 px-4 py-3">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" />
-                    <div
-                      className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    />
-                    <div
-                      className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    />
-                  </div>
+                  <Card className="rounded-2xl rounded-tl-md border-none bg-muted/50 py-0">
+                    <CardContent className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" />
+                        <div
+                          className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        />
+                        <div
+                          className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </main>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </main>
+      </ScrollArea>
 
       {/* Input */}
       <ChatInput onSend={handleSend} disabled={isLoading} />
